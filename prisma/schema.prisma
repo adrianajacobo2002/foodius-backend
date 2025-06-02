@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id            Int             @id @default(autoincrement())
+  first_name    String          @db.VarChar(255)
+  last_names    String          @db.VarChar(255)
+  email         String          @unique @db.VarChar(255)
+  phone_number  String          @unique @db.VarChar(8)
+  password      String          @db.VarChar(100)
+  role          USER_ROLE       @default(CLIENT)
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  is_active     Boolean         @default(true)
+  Orders        Orders[]
+  UserAddresses UserAddresses[]
+}
+
+model UserAddresses {
+  id              Int      @id @default(autoincrement())
+  user            Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int
+  label           String   @default("Otra")
+  location        String
+  latitude        Float
+  longitude       Float
+  reference_point String   @db.VarChar(255)
+  is_default      Boolean  @default(false)
+  created_at      DateTime @default(now())
+  is_active       Boolean  @default(true)
+}
+
+model Businesses {
+  id                  Int              @id @default(autoincrement())
+  name                String           @db.VarChar(255)
+  email               String           @unique @db.VarChar(255)
+  phone_number        String           @unique @db.VarChar(8)
+  location            String
+  latitude            Float
+  longitude           Float
+  password            String           @db.VarChar(100)
+  logo                String           @db.VarChar(255)
+  banner              String           @db.VarChar(255)
+  slug                String           @db.VarChar(255)
+  bank_account_number String?          @db.VarChar(50)
+  bank_name           String?          @db.VarChar(100)
+  is_approved         Boolean          @default(false)
+  created_at          DateTime         @default(now())
+  is_active           Boolean          @default(true)
+  FoodCategory        FoodCategories[]
+  Schedules           Schedules[]
+}
+
+model Schedules {
+  id          Int        @id @default(autoincrement())
+  Business    Businesses @relation(fields: [id_business], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_business Int
+  day         WEEKDAYS
+  from        DateTime   @db.Timestamp()
+  to          DateTime   @db.Timestamp()
+  is_open     Boolean    @default(true)
+}
+
+model FoodCategories {
+  id          Int        @id @default(autoincrement())
+  Business    Businesses @relation(fields: [id_business], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_business Int
+  name        String     @db.VarChar(255)
+  description String
+  is_active           Boolean          @default(true)
+  Food        Foods[]
+}
+
+model Foods {
+  id               Int             @id @default(autoincrement())
+  FoodCategory     FoodCategories  @relation(fields: [id_food_category], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_food_category Int
+  name             String          @db.VarChar(255)
+  description      String
+  price            Decimal         @db.Decimal(10, 2)
+  img_url          String          @db.VarChar(500)
+  is_available     Boolean
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+  is_active        Boolean         @default(true)
+  OrdersDetails    OrdersDetails[]
+}
+
+model Orders {
+  id               Int              @id @default(autoincrement())
+  User             Users            @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_user          Int
+  delivery_address String
+  latitude         Float
+  longitude        Float
+  reference_point  String           @db.VarChar(255)
+  state            ORDER_STATES
+  date             DateTime?        @default(now()) @db.Timestamp()
+  token            String?          @unique @default(uuid()) @db.VarChar(100)
+  service_fee      Decimal          @db.Decimal(10, 2)
+  delivery_method  DELIVERY_METHODS
+  payment_method   PAYMENT_METHODS  @default(UPON_DELIVERY)
+  OrdersDetails    OrdersDetails[]
+  Cancellation     Cancellation[]
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+}
+
+model OrdersDetails {
+  id       Int     @id @default(autoincrement())
+  Order    Orders  @relation(fields: [id_order], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_order Int
+  Food     Foods   @relation(fields: [id_food], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id_food  Int
+  price    Decimal @db.Decimal(10, 2)
+  quantity Int
+}
+
+model Cancellation {
+  id         Int      @id @default(autoincrement())
+  order      Orders   @relation(fields: [orderId], references: [id])
+  orderId    Int
+  message    String
+  created_at DateTime @default(now())
+}
+
+enum USER_ROLE {
+  CLIENT
+  ADMIN
+  BUSINESS
+}
+
+enum ORDER_STATES {
+  ACTIVE
+  PREPARING
+  FINISHED
+  DELIVERING
+  DELIVERED
+  CANCELED
+}
+
+enum DELIVERY_METHODS {
+  UPON_DELIVERY
+  HOME_DELIVERY
+}
+
+enum PAYMENT_METHODS {
+  UPON_DELIVERY
+  WOMPI
+}
+
+enum WEEKDAYS {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
