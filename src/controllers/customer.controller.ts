@@ -128,7 +128,39 @@ export const customerController = {
     }
   }) as RequestHandler,
 
-  
+  createOrder: (async (req, res) => {
+    try {
+      const customerId = req.user?.id;
+
+      if (!customerId) {
+        return res.status(401).json({ message: "No autorizado" });
+      }
+
+      const order = await customerService.createOrder(customerId, req.body);
+
+      const subtotal = order.OrdersDetails.reduce((acc, item) => {
+        return acc + Number(item.price) * item.quantity;
+      }, 0);
+
+      const total = subtotal + Number(order.service_fee);
+
+      res.status(201).json({
+        success: true,
+        message: "Orden creada correctamente.",
+        data: {
+          ...order,
+          subtotal: subtotal.toFixed(2),
+          total: total.toFixed(2),
+        },
+      });
+    } catch (error: any) {
+      console.error("Error al crear orden:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno al procesar la orden.",
+      });
+    }
+  }) as RequestHandler,
 
   getOrders: (async (req, res) => {
     try {

@@ -44,7 +44,13 @@ router.post(
   validate(CreateAddressSchema),
   customerController.createAddress
 );
-
+router.post(
+  "/orders",
+  authenticate,
+  restrictTo("CLIENT"),
+  validate(CreateOrderSchema),
+  customerController.createOrder
+);
 router.put(
   "/addresses/:id",
   authenticate,
