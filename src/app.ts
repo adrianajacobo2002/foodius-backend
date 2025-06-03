@@ -22,6 +22,7 @@ import foodRoutes from "./routes/food.routes";
 
 import { uploadBusinessImages } from "../src/config/multer";
 
+import scheduleRoutes from "./routes/schedule.routes";
 
 
 app.use("/uploads", express.static("uploads"));
@@ -30,6 +31,8 @@ app.use("/api/business", businessRoutes);
 app.use("/api/food-categories", foodCategoryRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/foods", foodRoutes); 
+app.use("/api/schedules", scheduleRoutes);
+
 
 app.listen(env.PORT, env.HOST, () => {
   console.log(`Servidor corriendo en http://${env.HOST}:${env.PORT}`);
