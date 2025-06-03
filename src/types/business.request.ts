@@ -8,8 +8,8 @@ export const RegisterBusinessRequestSchema = z.object({
   location: z.string(),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
-  logo: z.string().optional(),
-  banner: z.string().optional(),
+  logo: z.string().optional().default(""),
+  banner: z.string().optional().default(""),
   bank_account_number: z.string().optional().default(""),
   bank_name: z.string().optional().default(""),
 });

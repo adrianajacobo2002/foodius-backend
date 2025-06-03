@@ -6,10 +6,6 @@ import { asyncHandler } from "../utils/asyncHandler"; // ✅ IMPORTACIÓN FALTAN
 export const businessController = {
   register: (async (req, res) => {
     try {
-      const files = req.files as Record<string, Express.Multer.File[]>;
-      const logo = files["logo"]?.[0]?.filename || "";
-      const banner = files["banner"]?.[0]?.filename || "";
-
       const rawData = {
         name: req.body.name,
         email: req.body.email,
@@ -18,10 +14,10 @@ export const businessController = {
         location: req.body.location,
         latitude: parseFloat(req.body.latitude),
         longitude: parseFloat(req.body.longitude),
-        bank_account_number: req.body.bank_account_number || "",
-        bank_name: req.body.bank_name || "",
-        logo: `/uploads/businesses/logos/${logo}`,
-        banner: `/uploads/businesses/banners/${banner}`,
+        bank_account_number: "",
+        bank_name: "",
+        logo: "",
+        banner: "",
       };
 
       const validatedData = RegisterBusinessRequestSchema.parse(rawData);

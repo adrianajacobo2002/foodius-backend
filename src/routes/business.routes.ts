@@ -14,7 +14,6 @@ const router = Router();
 
 router.post(
   "/register",
-  uploadBusinessImages.fields([{ name: "logo" }, { name: "banner" }]),
   businessController.register
 );
 
