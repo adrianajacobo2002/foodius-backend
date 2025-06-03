@@ -22,3 +22,16 @@ export const UpdateAddressSchema = z.object({
 
 export type UpdateAddressRequest = z.infer<typeof UpdateAddressSchema>;
 
+export const CreateOrderSchema = z.object({
+  address_id: z.number(),
+  items: z.array(
+    z.object({
+      food_id: z.number(),
+      quantity: z.number().min(1)
+    })
+  ).min(1),
+  payment_method: z.enum(["UPON_DELIVERY", "WOMPI"]),
+  delivery_method: z.enum(["UPON_DELIVERY", "HOME_DELIVERY"])
+});
+
+export type CreateOrderRequest = z.infer<typeof CreateOrderSchema>;
