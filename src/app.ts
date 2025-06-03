@@ -1,23 +1,22 @@
 import express from "express";
-
-import { env } from "./config/env";
 import cookieParser from "cookie-parser";
-
-import authRoutes from "./routes/auth.routes";
-import businessRoutes from "./routes/business.routes";
-
-import foodCategoryRoutes from "./routes/food-category.routes";
-
+import { env } from "./config/env";
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 
+import authRoutes from "./routes/auth.routes";
+import businessRoutes from "./routes/business.routes";
+import foodCategoryRoutes from "./routes/food-category.routes";
+import customerRoutes from "./routes/customer.routes"
+
 app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/business", businessRoutes);
 app.use("/api/food-categories", foodCategoryRoutes);
+app.use("/api/customers", customerRoutes);
 
 
 app.listen(env.PORT, env.HOST, () => {
