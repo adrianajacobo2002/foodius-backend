@@ -37,3 +37,20 @@ export const buildApprovedEmail = ({ businessName }: BusinessEmailData): string 
     </div>
   `;
 };
+
+//correo de solicitud rechazada
+export const buildRejectedEmail = ({ businessName }: BusinessEmailData): string => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+      <h2 style="color: #e53e3e;">Tu solicitud ha sido rechazada</h2>
+      <p style="color: #4a5568;">
+        Lamentamos informarte que la solicitud para el negocio <strong>${businessName}</strong> ha sido denegada.
+      </p>
+      <p style="color: #4a5568;">
+        Si crees que se trata de un error o deseas más información, puedes comunicarte con nuestro equipo de soporte a <a href="mailto:${env.SUPPORT_EMAIL}">${env.SUPPORT_EMAIL}</a>.
+      </p>
+      <hr />
+      <p style="color: #a0aec0; font-size: 0.875rem;">Equipo de Foodius</p>
+    </div>
+  `;
+};
