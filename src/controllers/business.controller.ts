@@ -1,6 +1,7 @@
 import { Request, Response, RequestHandler } from "express";
 import { businessService } from "../services/business.service";
 import { RegisterBusinessRequestSchema } from "../types/business.request";
+import { asyncHandler } from "../utils/asyncHandler"; // ✅ IMPORTACIÓN FALTANTE
 
 export const businessController = {
   register: (async (req, res) => {
@@ -46,5 +47,49 @@ export const businessController = {
         message: error.message,
       });
     }
-  }) as RequestHandler, // 👈 Esto soluciona el error
+  }) as RequestHandler,
+
+
+  //para aprobar o rechazar un negocio
+
+  approve: asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const result = await businessService.approveBusiness(id);
+    res.json({ success: true, data: result });
+  }),
+
+  reject: asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const result = await businessService.rejectBusiness(id);
+    res.json({ success: true, data: result });
+  }),
+
+
+
+  //para obtener las solicitudes de negocios pendientes aprobados denegados o todos
+
+getAll: asyncHandler(async (req, res) => {
+  const businesses = await businessService.getAllBusinesses();
+  res.json({ success: true, data: businesses });
+}),
+
+getPending: asyncHandler(async (req, res) => {
+  const businesses = await businessService.getBusinessesByStatus("PENDING");
+  res.json({ success: true, data: businesses });
+}),
+
+getApproved: asyncHandler(async (req, res) => {
+  const businesses = await businessService.getBusinessesByStatus("APPROVED");
+  res.json({ success: true, data: businesses });
+}),
+
+getRejected: asyncHandler(async (req, res) => {
+  const businesses = await businessService.getBusinessesByStatus("REJECTED");
+  res.json({ success: true, data: businesses });
+}),
+
+
 };
+
+
+

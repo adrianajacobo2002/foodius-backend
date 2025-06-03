@@ -7,6 +7,14 @@ import {
   buildRegistrationEmail,
 } from "../emails/business-emails";
 
+
+
+import { buildRejectedEmail } from "../emails/business-emails";
+
+
+
+
+
 export const businessService = {
   async registerBusiness(data: RegisterBusinessRequest) {
     const existing = await prisma.businesses.findFirst({
@@ -60,6 +68,9 @@ export const businessService = {
     };
   },
 
+
+  //para aprobar un negocio
+
   async approveBusiness(id: number) {
     const business = await prisma.businesses.findUnique({ where: { id } });
 
@@ -75,6 +86,23 @@ export const businessService = {
       where: { id },
       data: { approval_status: "APPROVED" },
     });
+
+
+    
+
+    //creacion del usuario del negocio
+
+    await prisma.users.create({
+      data: {
+        first_name: business.name, // o algún campo derivado
+        last_names: "Negocio",     // puedes ajustar esto
+        email: business.email,
+        phone_number: business.phone_number,
+        password: business.password, // ya está hasheado
+        role: "BUSINESS",
+      },
+    });
+
 
     await sendEmail({
       to: updated.email,
@@ -92,4 +120,57 @@ export const businessService = {
       status: "APPROVED",
     };
   },
+
+
+//para rechazar un negocio
+
+  async rejectBusiness(id: number) {
+    const business = await prisma.businesses.findUnique({ where: { id } });
+
+    if (!business) {
+      throw new Error("Negocio no encontrado.");
+    }
+
+    if (business.approval_status === "REJECTED") {
+      throw new Error("El negocio ya ha sido rechazado.");
+    }
+
+    const updated = await prisma.businesses.update({
+      where: { id },
+      data: { approval_status: "REJECTED" },
+    });
+
+    await sendEmail({
+      to: updated.email,
+      subject: "Solicitud rechazada - Foodius",
+      html: buildRejectedEmail({
+        email: updated.email,
+        businessName: updated.name,
+      }),
+    });
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      status: "REJECTED",
+    };
+  },
+
+
+
+//para obtener todos los negocios o por estado
+
+getAllBusinesses: () => prisma.businesses.findMany(),
+
+  getBusinessesByStatus: (status: "PENDING" | "APPROVED" | "REJECTED") => {
+    return prisma.businesses.findMany({
+      where: {
+        approval_status: status,
+      },
+    });
+  },
+
+
+
 };
