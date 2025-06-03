@@ -101,65 +101,83 @@ export const customerService = {
   },
 
   async createOrder(userId: number, data: CreateOrderRequest) {
-    const address = await prisma.userAddresses.findFirst({
-      where: { id: data.address_id, userId, is_active: true },
-    });
+  const foodIds = data.items.map((item) => item.food_id);
 
-    if (!address) throw new Error("Dirección no válida.");
-
-    const foods = await prisma.foods.findMany({
-      where: {
-        id: { in: data.items.map((i) => i.food_id) },
-        is_available: true,
-        is_active: true,
-      },
-    });
-
-    if (foods.length !== data.items.length) {
-      throw new Error("Uno o más platillos no están disponibles.");
-    }
-
-    const items = data.items.map((item) => {
-      const food = foods.find((f) => f.id === item.food_id)!;
-      const subtotal = food.price.mul(item.quantity);
-      return {
-        id_food: food.id,
-        quantity: item.quantity,
-        price: food.price,
-        subtotal,
-      };
-    });
-
-    const subtotal = items.reduce(
-      (acc, item) => acc.plus(item.subtotal),
-      new Prisma.Decimal(0)
-    );
-    const serviceFee = subtotal.mul(0.05);
-
-    const order = await prisma.orders.create({
-      data: {
-        id_user: userId,
-        delivery_address: address.location,
-        latitude: address.latitude,
-        longitude: address.longitude,
-        reference_point: address.reference_point,
-        state: "ACTIVE",
-        service_fee: serviceFee,
-        delivery_method: data.delivery_method,
-        payment_method: data.payment_method,
-        OrdersDetails: {
-          create: items.map((item) => ({
-            id_food: item.id_food,
-            quantity: item.quantity,
-            price: item.subtotal,
-          })),
+  const foods = await prisma.foods.findMany({
+    where: {
+      id: { in: foodIds },
+      is_active: true,
+      is_available: true,
+    },
+    include: {
+      FoodCategory: {
+        select: {
+          id_business: true,
         },
       },
-      include: { OrdersDetails: true },
-    });
+    },
+  });
 
-    return order;
-  },
+  if (foods.length !== data.items.length) {
+    throw new Error("Uno o más platillos no están disponibles.");
+  }
+
+  const businessIds = foods.map((f) => f.FoodCategory.id_business);
+  const uniqueBusinesses = new Set(businessIds);
+
+  if (uniqueBusinesses.size > 1) {
+    throw new Error("No puedes combinar productos de diferentes restaurantes en una sola orden.");
+  }
+
+  const businessId = businessIds[0];
+
+  const address = await prisma.userAddresses.findFirst({
+    where: { id: data.address_id, userId, is_active: true },
+  });
+
+  if (!address) {
+    throw new Error("Dirección no válida.");
+  }
+
+  const subtotal = data.items.reduce((acc, item) => {
+    const food = foods.find((f) => f.id === item.food_id);
+    return acc + (food ? Number(food.price) * item.quantity : 0);
+  }, 0);
+
+  const service_fee = parseFloat((subtotal * 0.05).toFixed(2));
+
+  const order = await prisma.orders.create({
+    data: {
+      id_user: userId,
+      id_business: businessId,
+      delivery_address: address.location,
+      latitude: address.latitude,
+      longitude: address.longitude,
+      reference_point: address.reference_point,
+      state: "ACTIVE",
+      service_fee,
+      delivery_method: data.delivery_method,
+      payment_method: data.payment_method,
+      OrdersDetails: {
+        create: data.items.map((item) => ({
+          id_food: item.food_id,
+          price: foods.find((f) => f.id === item.food_id)?.price ?? 0,
+          quantity: item.quantity,
+        })),
+      },
+    },
+    include: {
+      OrdersDetails: {
+        include: {
+          Food: true,
+        },
+      },
+    },
+  });
+
+  return order;
+},
+
 
   async getCustomerOrders(userId: number, state?: ORDER_STATES) {
     const orders = await prisma.orders.findMany({

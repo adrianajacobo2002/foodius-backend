@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import { customerService } from "../services/customer.service";
 import { ORDER_STATES } from "../../generated/prisma";
 
-
 export const customerController = {
   getProfile: (async (req, res) => {
     try {
@@ -140,7 +139,7 @@ export const customerController = {
       const order = await customerService.createOrder(customerId, req.body);
 
       const subtotal = order.OrdersDetails.reduce((acc, item) => {
-        return acc + Number(item.price);
+        return acc + Number(item.price) * item.quantity;
       }, 0);
 
       const total = subtotal + Number(order.service_fee);
