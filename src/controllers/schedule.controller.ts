@@ -1,44 +1,73 @@
-import { RequestHandler } from "express";
+import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import { scheduleService } from "../services/schedule.service";
-import { WEEKDAYS } from "../../generated/prisma";
+import { PrismaClient, WEEKDAYS } from "../../generated/prisma";
+
+const prisma = new PrismaClient();
 
 export const scheduleController = {
   // Crear horario
-  create: asyncHandler((async (req, res) => {
-    const businessId = req.user?.id;
-    if (!businessId) {
-      return res.status(401).json({ success: false, message: "No autenticado" });
+  create: asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user?.email) {
+      res.status(401).json({ success: false, message: "No autenticado" });
+      return;
+    }
+
+    const business = await prisma.businesses.findFirst({
+      where: {
+        email: req.user.email,
+        is_active: true,
+        approval_status: "APPROVED",
+      },
+    });
+
+    if (!business) {
+      res.status(404).json({ success: false, message: "Negocio no válido o no aprobado" });
+      return;
     }
 
     const { day, from, to } = req.body;
 
     if (!Object.values(WEEKDAYS).includes(day)) {
-      return res.status(400).json({ success: false, message: "Día inválido" });
+      res.status(400).json({ success: false, message: "Día inválido" });
+      return;
     }
 
-    const created = await scheduleService.create(businessId, {
+    const created = await scheduleService.create(business.id, {
       day,
       from: new Date(from),
       to: new Date(to),
     });
 
     res.status(201).json({ success: true, data: created });
-  }) as RequestHandler),
+  }),
 
   // Obtener todos los horarios del negocio autenticado
-  getAll: asyncHandler((async (req, res) => {
-    const businessId = req.user?.id;
-    if (!businessId) {
-      return res.status(401).json({ success: false, message: "No autenticado" });
+  getAll: asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user?.email) {
+      res.status(401).json({ success: false, message: "No autenticado" });
+      return;
     }
 
-    const horarios = await scheduleService.getAllByBusiness(businessId);
+    const business = await prisma.businesses.findFirst({
+      where: {
+        email: req.user.email,
+        is_active: true,
+        approval_status: "APPROVED",
+      },
+    });
+
+    if (!business) {
+      res.status(404).json({ success: false, message: "Negocio no válido o no aprobado" });
+      return;
+    }
+
+    const horarios = await scheduleService.getAllByBusiness(business.id);
     res.json({ success: true, data: horarios });
-  }) as RequestHandler),
+  }),
 
   // Editar horario
-  update: asyncHandler((async (req, res) => {
+  update: asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const { from, to } = req.body;
 
@@ -48,21 +77,21 @@ export const scheduleController = {
     });
 
     res.json({ success: true, data: updated });
-  }) as RequestHandler),
+  }),
 
   // Eliminar horario
-  remove: asyncHandler((async (req, res) => {
+  remove: asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const deleted = await scheduleService.remove(id);
     res.json({ success: true, message: "Horario eliminado", data: deleted });
-  }) as RequestHandler),
+  }),
 
   // Cambiar estado de is_open
-  toggleOpen: asyncHandler((async (req, res) => {
+  toggleOpen: asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const { is_open } = req.body;
 
     const updated = await scheduleService.toggleOpen(id, Boolean(is_open));
     res.json({ success: true, data: updated });
-  }) as RequestHandler),
+  }),
 };
