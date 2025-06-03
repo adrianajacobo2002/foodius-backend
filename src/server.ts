@@ -1,8 +1,8 @@
-
-import { app, prisma } from './app';
+import { PrismaClient } from '../generated/prisma';
+import { app } from './app';
 
 const PORT = 3000;
-
+const  prisma = new PrismaClient();
 // Función de prueba de conexión
 async function testPrismaConnection() {
   try {

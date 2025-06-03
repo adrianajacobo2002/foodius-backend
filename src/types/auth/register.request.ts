@@ -4,5 +4,4 @@ export type RegisterRequest = {
   email: string;
   phone_number: string;
   password: string;
-  role?: 'CLIENT' | 'ADMIN';
 };

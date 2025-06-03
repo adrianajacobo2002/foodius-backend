@@ -44,22 +44,22 @@ model UserAddresses {
 }
 
 model Businesses {
-  id                  Int              @id @default(autoincrement())
-  name                String           @db.VarChar(255)
-  email               String           @unique @db.VarChar(255)
-  phone_number        String           @unique @db.VarChar(8)
+  id                  Int                      @id @default(autoincrement())
+  name                String                   @db.VarChar(255)
+  email               String                   @unique @db.VarChar(255)
+  phone_number        String                   @unique @db.VarChar(8)
   location            String
   latitude            Float
   longitude           Float
-  password            String           @db.VarChar(100)
-  logo                String           @db.VarChar(255)
-  banner              String           @db.VarChar(255)
-  slug                String           @db.VarChar(255)
-  bank_account_number String?          @db.VarChar(50)
-  bank_name           String?          @db.VarChar(100)
-  is_approved         Boolean          @default(false)
-  created_at          DateTime         @default(now())
-  is_active           Boolean          @default(true)
+  password            String                   @db.VarChar(100)
+  logo                String                   @db.VarChar(255)
+  banner              String                   @db.VarChar(255)
+  slug                String                   @db.VarChar(255)
+  bank_account_number String?                  @db.VarChar(50)
+  bank_name           String?                  @db.VarChar(100)
+  created_at          DateTime                 @default(now())
+  is_active           Boolean                  @default(true)
+  approval_status     BUSINESS_APPROVAL_STATUS @default(PENDING)
   FoodCategory        FoodCategories[]
   Schedules           Schedules[]
 }
@@ -80,7 +80,7 @@ model FoodCategories {
   id_business Int
   name        String     @db.VarChar(255)
   description String
-  is_active           Boolean          @default(true)
+  is_active   Boolean    @default(true)
   Food        Foods[]
 }
 
@@ -170,4 +170,10 @@ enum WEEKDAYS {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum BUSINESS_APPROVAL_STATUS {
+  PENDING
+  APPROVED
+  REJECTED
 }

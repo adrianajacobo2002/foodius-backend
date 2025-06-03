@@ -1,26 +1,22 @@
-import express from 'express';
-import { PrismaClient } from '../generated/prisma';
+import express from "express";
 
-const prisma = new PrismaClient();
+import { env } from "./config/env";
+import cookieParser from "cookie-parser";
+
+import authRoutes from "./routes/auth.routes";
+import businessRoutes from "./routes/business.routes";
+
 const app = express();
 
-app.get('/api/prisma-test', async (req, res) => {
-  try {
-    // Consulta de prueba a la base de datos
-    const result = await prisma.$queryRaw`SELECT 1+1 as sum`;
-    
-    res.json({
-      success: true,
-      message: 'Prisma está funcionando correctamente',
-      databaseResponse: result
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error al conectar con Prisma',
+app.use(express.json());
+app.use(cookieParser());
 
-    });
-  }
+app.use("/uploads", express.static("uploads"));
+app.use("/api/auth", authRoutes);
+app.use("/api/business", businessRoutes);
+
+app.listen(env.PORT, env.HOST, () => {
+  console.log(`Servidor corriendo en http://${env.HOST}:${env.PORT}`);
 });
 
-export { app, prisma };
+export { app };
