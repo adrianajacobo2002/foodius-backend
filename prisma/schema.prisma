@@ -27,6 +27,7 @@ model Users {
   is_active     Boolean         @default(true)
   Orders        Orders[]
   UserAddresses UserAddresses[]
+  Businesses    Businesses?
 }
 
 model UserAddresses {
@@ -45,6 +46,8 @@ model UserAddresses {
 
 model Businesses {
   id                  Int                      @id @default(autoincrement())
+  user_id             Int?                     @unique
+  user                Users?                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   name                String                   @db.VarChar(255)
   email               String                   @unique @db.VarChar(255)
   phone_number        String                   @unique @db.VarChar(8)

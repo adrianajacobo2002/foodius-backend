@@ -12,6 +12,8 @@ import { authenticate, restrictTo } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+router.get("/profile", authenticate, businessController.getProfile);
+
 router.post(
   "/register",
   businessController.register

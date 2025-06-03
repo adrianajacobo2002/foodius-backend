@@ -1,3 +1,5 @@
+// src/services/business.service.ts
+
 import prisma from "../config/database";
 import { RegisterBusinessRequest } from "../types/business.request";
 import { hashPassword } from "../utils/auth/bcrypt.utils";
@@ -5,15 +7,8 @@ import { sendEmail } from "./email.service";
 import {
   buildApprovedEmail,
   buildRegistrationEmail,
+  buildRejectedEmail,
 } from "../emails/business-emails";
-
-
-
-import { buildRejectedEmail } from "../emails/business-emails";
-
-
-
-
 
 export const businessService = {
   async registerBusiness(data: RegisterBusinessRequest) {
@@ -68,9 +63,6 @@ export const businessService = {
     };
   },
 
-
-  //para aprobar un negocio
-
   async approveBusiness(id: number) {
     const business = await prisma.businesses.findUnique({ where: { id } });
 
@@ -82,27 +74,40 @@ export const businessService = {
       throw new Error("El negocio ya ha sido aprobado.");
     }
 
-    const updated = await prisma.businesses.update({
-      where: { id },
-      data: { approval_status: "APPROVED" },
+    // Verificar si ya existe un usuario con ese email o teléfono
+    const existingUser = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { email: business.email },
+          { phone_number: business.phone_number },
+        ],
+      },
     });
 
+    if (existingUser) {
+      throw new Error("Ya existe un usuario con este correo o teléfono.");
+    }
 
-    
-
-    //creacion del usuario del negocio
-
-    await prisma.users.create({
+    // Crear el usuario del negocio
+    const user = await prisma.users.create({
       data: {
-        first_name: business.name, // o algún campo derivado
-        last_names: "Negocio",     // puedes ajustar esto
+        first_name: business.name,
+        last_names: "Negocio",
         email: business.email,
         phone_number: business.phone_number,
-        password: business.password, // ya está hasheado
+        password: business.password,
         role: "BUSINESS",
       },
     });
 
+    // Actualizar el negocio con el user_id
+    const updated = await prisma.businesses.update({
+      where: { id },
+      data: {
+        approval_status: "APPROVED",
+        user_id: user.id,
+      },
+    });
 
     await sendEmail({
       to: updated.email,
@@ -120,9 +125,6 @@ export const businessService = {
       status: "APPROVED",
     };
   },
-
-
-//para rechazar un negocio
 
   async rejectBusiness(id: number) {
     const business = await prisma.businesses.findUnique({ where: { id } });
@@ -157,11 +159,7 @@ export const businessService = {
     };
   },
 
-
-
-//para obtener todos los negocios o por estado
-
-getAllBusinesses: () => prisma.businesses.findMany(),
+  getAllBusinesses: () => prisma.businesses.findMany(),
 
   getBusinessesByStatus: (status: "PENDING" | "APPROVED" | "REJECTED") => {
     return prisma.businesses.findMany({
@@ -170,7 +168,4 @@ getAllBusinesses: () => prisma.businesses.findMany(),
       },
     });
   },
-
-
-
 };
